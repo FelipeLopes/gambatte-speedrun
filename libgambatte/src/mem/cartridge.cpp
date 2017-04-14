@@ -459,6 +459,77 @@ private:
 	void setRombank() const { memptrs_.setRombank(adjustedRombank(rombank_) & (rombanks(memptrs_) - 1)); }
 };
 
+class Tpp1 : public DefaultMbc {
+public:
+	explicit Tpp1(MemPtrs &memptrs, Rtc *const rtc)
+	: memptrs_(memptrs)
+//	, rtc_(rtc)
+	, rombank_(1)
+	, rambank_(0)
+	, enableRam_(false)
+	{
+	}
+
+	virtual void romWrite(unsigned const p, unsigned const data) {
+		if (p >= 0x4000) return;
+		switch (p & 3) {
+		case 0:
+			rombank_ = (rombank_ & 0x100) | data;
+			setRombank();
+			break;
+		case 1:
+			rombank_ = (data << 8) | (rombank_ & 0xFF);
+			setRombank();
+			break;
+		case 2:
+			rambank_ = data;
+			setRambank();
+			break;
+		case 3:
+			switch(data) {
+			case 0x00: /* TODO */ break;
+			case 0x02: enableRam_ = false; break;
+			case 0x03: enableRam_ = true; break;
+			case 0x05: /* TODO */ break;
+			// TODO: RTC handling
+			// TODO: add rumble support
+			}
+			break;
+		}
+	}
+
+	virtual void saveState(SaveState::Mem &ss) const {
+		ss.rombank = rombank_;
+		ss.rambank = rambank_;
+		ss.enableRam = enableRam_;
+	}
+
+	virtual void loadState(SaveState::Mem const &ss) {
+		rombank_ = ss.rombank;
+		rambank_ = ss.rambank;
+		enableRam_ = ss.enableRam;
+		setRambank();
+		setRombank();
+	}
+
+private:
+	MemPtrs &memptrs_;
+	unsigned short rombank_;
+	unsigned char rambank_;
+	bool enableRam_;
+
+	static unsigned adjustedRombank(unsigned bank) { return bank; }
+
+	void setRambank() const {
+		memptrs_.setRambank(enableRam_ ? MemPtrs::read_en | MemPtrs::write_en : MemPtrs::read_en,
+		                    rambank_ & (rambanks(memptrs_) - 1));
+	}
+
+	void setRombank() const { memptrs_.setRombank(adjustedRombank(rombank_) & (rombanks(memptrs_) - 1)); }
+	
+	// TODO RTC handling
+};
+
 static bool hasRtc(unsigned headerByte0x147) {
 	switch (headerByte0x147) {
 	case 0x0F:
@@ -549,14 +620,15 @@ LoadRes Cartridge::loadROM(std::string const &romfile,
 	                     type_mbc2,
 	                     type_mbc3,
 	                     type_mbc5,
-	                     type_huc1 };
+	                     type_huc1,
+                         type_tpp1 };
 	Cartridgetype type = type_plain;
 	unsigned rambanks = 1;
 	unsigned rombanks = 2;
 	bool cgb = false;
 
 	{
-		unsigned char header[0x150];
+		unsigned char header[0x154];
 		rom->read(reinterpret_cast<char *>(header), sizeof header);
 
 		switch (header[0x0147]) {
@@ -587,6 +659,11 @@ LoadRes Cartridge::loadROM(std::string const &romfile,
 		case 0x1E: type = type_mbc5; break;
 		case 0x20: return LOADRES_UNSUPPORTED_MBC_MBC6;
 		case 0x22: return LOADRES_UNSUPPORTED_MBC_MBC7;
+		case 0xBC:
+			if (header[0x0149] == 0xC1 && header[0x014A] == 0x65) {
+				type = type_tpp1;
+				break;
+			}
 		case 0xFC: return LOADRES_UNSUPPORTED_MBC_POCKET_CAMERA;
 		case 0xFD: return LOADRES_UNSUPPORTED_MBC_TAMA5;
 		case 0xFE: return LOADRES_UNSUPPORTED_MBC_HUC3;
@@ -610,7 +687,11 @@ LoadRes Cartridge::loadROM(std::string const &romfile,
 		default: return -1;
 		}*/
 
-		rambanks = numRambanksFromH14x(header[0x147], header[0x149]);
+		if (type == type_tpp1) {
+			if(header[0x152] == 0) rambanks = 0;
+			else rambanks = 1 << std::max(header[0x152] - 1, 8);
+		}
+		else rambanks = numRambanksFromH14x(header[0x147], header[0x149]);
 		cgb = !forceDmg;
 	}
 
@@ -650,6 +731,9 @@ LoadRes Cartridge::loadROM(std::string const &romfile,
 		break;
 	case type_mbc5: mbc_.reset(new Mbc5(memptrs_)); break;
 	case type_huc1: mbc_.reset(new HuC1(memptrs_)); break;
+	case type_tpp1:
+		mbc_.reset(new Tpp1(memptrs_, memptrs_.romdata()[0x153] & 4 ? &rtc_ : 0));
+		break;
 	}
 
 	return LOADRES_OK;
