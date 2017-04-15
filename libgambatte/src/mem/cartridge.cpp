@@ -416,7 +416,7 @@ public:
 			break;
 		case 1:
 			rombank_ = p < 0x3000
-			         ? (rombank_  & 0x100) |  data
+			         ? (rombank_  & 0x100) | data
 			         : (data << 8 & 0x100) | (rombank_ & 0xFF);
 			setRombank();
 			break;
@@ -473,19 +473,19 @@ public:
 	virtual void romWrite(unsigned const p, unsigned const data) {
 		if (p >= 0x4000) return;
 		switch (p & 3) {
-		case 0:
-			rombank_ = (rombank_ & 0x100) | data;
+		case 0: // MR0
+			rombank_ = (rombank_ & 0xFF00) | data;
 			setRombank();
 			break;
-		case 1:
-			rombank_ = (data << 8) | (rombank_ & 0xFF);
+		case 1: // MR1
+			rombank_ = (rombank_ & 0x00FF) | (data << 8);
 			setRombank();
 			break;
-		case 2:
+		case 2: // MR2 (SRAM)
 			rambank_ = data;
 			setRambank();
 			break;
-		case 3:
+		case 3: // MR3
 			switch(data) {
 			case 0x00: /* TODO */ break;
 			case 0x02: enableRam_ = false; break;
@@ -660,10 +660,8 @@ LoadRes Cartridge::loadROM(std::string const &romfile,
 		case 0x20: return LOADRES_UNSUPPORTED_MBC_MBC6;
 		case 0x22: return LOADRES_UNSUPPORTED_MBC_MBC7;
 		case 0xBC:
-			if (header[0x0149] == 0xC1 && header[0x014A] == 0x65) {
-				type = type_tpp1;
-				break;
-			}
+			if (header[0x0149] == 0xC1 && header[0x014A] == 0x65) { type = type_tpp1; break; }
+			else return LOADRES_BAD_FILE_OR_UNKNOWN_MBC; // broken TPP1 header
 		case 0xFC: return LOADRES_UNSUPPORTED_MBC_POCKET_CAMERA;
 		case 0xFD: return LOADRES_UNSUPPORTED_MBC_TAMA5;
 		case 0xFE: return LOADRES_UNSUPPORTED_MBC_HUC3;
