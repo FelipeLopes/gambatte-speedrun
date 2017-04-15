@@ -320,7 +320,7 @@ private:
 			rtc_->set(enableRam_, rambank_);
 
 			if (rtc_->activeData())
-				flags |= MemPtrs::rtc_en;
+				flags |= MemPtrs::specialmap;
 		}
 
 		memptrs_.setRambank(flags, rambank_ & (rambanks(memptrs_) - 1));
@@ -459,14 +459,21 @@ private:
 	void setRombank() const { memptrs_.setRombank(adjustedRombank(rombank_) & (rombanks(memptrs_) - 1)); }
 };
 
+enum Tpp1SramMap {
+	map_MRx,
+	map_SRO,
+	map_SRW,
+	map_RTC
+}
+
 class Tpp1 : public DefaultMbc {
 public:
 	explicit Tpp1(MemPtrs &memptrs, Rtc *const rtc)
 	: memptrs_(memptrs)
-//	, rtc_(rtc)
+	, rtc_(rtc)
 	, rombank_(1)
 	, rambank_(0)
-	, enableRam_(false)
+	, mapmode_(map_MRx)
 	{
 	}
 
@@ -487,10 +494,22 @@ public:
 			break;
 		case 3: // MR3
 			switch(data) {
-			case 0x00: /* TODO */ break;
-			case 0x02: enableRam_ = false; break;
-			case 0x03: enableRam_ = true; break;
-			case 0x05: /* TODO */ break;
+			case 0x00:
+				mapmode_ = map_MRx;
+				setRambank();
+				break;
+			case 0x02:
+				mapmode_ = map_SRO;
+				setRambank();
+				break;
+			case 0x03:
+				mapmode_ = map_SRW;
+				setRambank();
+				break;
+			case 0x05:
+				mapmode_ = map_RTC;
+				setRambank();
+				break;
 			// TODO: RTC handling
 			// TODO: add rumble support
 			}
@@ -501,28 +520,48 @@ public:
 	virtual void saveState(SaveState::Mem &ss) const {
 		ss.rombank = rombank_;
 		ss.rambank = rambank_;
-		ss.enableRam = enableRam_;
+		ss.tpp1SramMap = mapmode_;
 	}
 
 	virtual void loadState(SaveState::Mem const &ss) {
 		rombank_ = ss.rombank;
 		rambank_ = ss.rambank;
-		enableRam_ = ss.enableRam;
+		mapmode_ = ss.tpp1SramMap;
 		setRambank();
 		setRombank();
+	}
+	
+	unsigned char readSpecialSram(unsigned const p) {
+		switch (mapmode_) {
+		case map_MRx:
+			switch (p & 3) {
+			case 0: return rombank_ & 0x00FF;
+			case 1: return (rombank_ & 0xFF00) >> 8;
+			case 2: return rambank_;
+			case 3: return 0; // TODO
+			}
+//		case map_RTC:
+		}
 	}
 
 private:
 	MemPtrs &memptrs_;
+	Rtc *const rtc_;
 	unsigned short rombank_;
 	unsigned char rambank_;
-	bool enableRam_;
+	unsigned char mapmode_;
 
 	static unsigned adjustedRombank(unsigned bank) { return bank; }
 
 	void setRambank() const {
-		memptrs_.setRambank(enableRam_ ? MemPtrs::read_en | MemPtrs::write_en : MemPtrs::read_en,
-		                    rambank_ & (rambanks(memptrs_) - 1));
+		unsigned flags = 0;
+		switch (mapmode_) {
+			case map_MRx: flags = MemPtrs::read_en | MemPtrs::specialmap; break;
+			case map_SRO: flags = MemPtrs::read_en; break;
+			case map_SRW: flags = MemPtrs::read_en | MemPtrs::write_en; break;
+			case map_RTC: flags = rtc_ ? MemPtrs::read_en | MemPtrs::write_en | MemPtrs::specialmap : 0; break;
+		}
+		memptrs_.setRambank(flags, rambank_ & (rambanks(memptrs_) - 1));
 	}
 
 	void setRombank() const { memptrs_.setRombank(adjustedRombank(rombank_) & (rombanks(memptrs_) - 1)); }
@@ -539,6 +578,9 @@ static bool hasRtc(unsigned headerByte0x147) {
 }
 
 }
+
+bool Cartridge::isTPP1() { return dynamic_cast<Tpp1*>(&mbc_) != 0; }
+unsigned char Cartridge::readTPP1SpecialSram(unsigned const p) { return dynamic_cast<Tpp1*>(&mbc_)->readSpecialSram(p); }
 
 void Cartridge::setStatePtrs(SaveState &state) {
 	state.mem.vram.set(memptrs_.vramdata(), memptrs_.vramdataend() - memptrs_.vramdata());

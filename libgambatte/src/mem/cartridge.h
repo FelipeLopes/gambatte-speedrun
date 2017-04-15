@@ -59,8 +59,8 @@ public:
 	void setOamDmaSrc(OamDmaSrc oamDmaSrc) { memptrs_.setOamDmaSrc(oamDmaSrc); }
 	void mbcWrite(unsigned addr, unsigned data) { mbc_->romWrite(addr, data); }
 	bool isCgb() const { return gambatte::isCgb(memptrs_); }
-	void rtcWrite(unsigned data) { rtc_.write(data); }
-	unsigned char rtcRead() const { return *rtc_.activeData(); }
+	void mbc3RtcWrite(unsigned data) { rtc_.write(data); }
+	unsigned char mbc3RtcRead() const { return *rtc_.activeData(); }
 	void loadSavedata();
 	void saveSavedata();
 	std::string const saveBasePath() const;
@@ -69,6 +69,8 @@ public:
 	char const * romTitle() const { return reinterpret_cast<char const *>(memptrs_.romdata() + 0x134); }
 	class PakInfo const pakInfo(bool multicartCompat) const;
 	void setGameGenie(std::string const &codes);
+	bool isTPP1();
+	unsigned char readTPP1SpecialSram(unsigned const p);
 
 private:
 	struct AddrData {
