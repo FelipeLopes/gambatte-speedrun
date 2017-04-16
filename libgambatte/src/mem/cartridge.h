@@ -24,6 +24,7 @@
 #include "rtc.h"
 #include "savestate.h"
 #include "scoped_ptr.h"
+#include "tpp1x.h"
 #include <string>
 #include <vector>
 
@@ -59,8 +60,8 @@ public:
 	void setOamDmaSrc(OamDmaSrc oamDmaSrc) { memptrs_.setOamDmaSrc(oamDmaSrc); }
 	void mbcWrite(unsigned addr, unsigned data) { mbc_->romWrite(addr, data); }
 	bool isCgb() const { return gambatte::isCgb(memptrs_); }
-	void mbc3RtcWrite(unsigned data) { rtc_.write(data); }
-	unsigned char mbc3RtcRead() const { return *rtc_.activeData(); }
+	void rtcWrite(unsigned data) { rtc_.write(data); }
+	unsigned char rtcRead() const { return *rtc_.activeData(); }
 	void loadSavedata();
 	void saveSavedata();
 	std::string const saveBasePath() const;
@@ -69,8 +70,9 @@ public:
 	char const * romTitle() const { return reinterpret_cast<char const *>(memptrs_.romdata() + 0x134); }
 	class PakInfo const pakInfo(bool multicartCompat) const;
 	void setGameGenie(std::string const &codes);
-	bool isTPP1();
-	unsigned char readTPP1SpecialSram(unsigned const p);
+	bool isTPP1() const { return tpp1x_.isTPP1(); }
+	unsigned char TPP1Read(unsigned p) const { return tpp1x_.read(p); }
+	void TPP1Write(unsigned p, unsigned data) { tpp1x_.write(p, data); }
 
 private:
 	struct AddrData {
@@ -81,6 +83,7 @@ private:
 
 	MemPtrs memptrs_;
 	Rtc rtc_;
+	Tpp1X tpp1x_;
 	scoped_ptr<Mbc> mbc_;
 	std::string defaultSaveBasePath_;
 	std::string saveDir_;

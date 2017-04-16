@@ -18,7 +18,7 @@ public:
 private:
 	unsigned short flags_;
 	unsigned short rombanks_;
-	unsigned char  h144x_[12];
+	unsigned char  h144x_[16];
 	unsigned crc_;
 };
 

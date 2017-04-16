@@ -320,7 +320,7 @@ private:
 			rtc_->set(enableRam_, rambank_);
 
 			if (rtc_->activeData())
-				flags |= MemPtrs::specialmap;
+				flags |= MemPtrs::rtc_en;
 		}
 
 		memptrs_.setRambank(flags, rambank_ & (rambanks(memptrs_) - 1));
@@ -459,21 +459,14 @@ private:
 	void setRombank() const { memptrs_.setRombank(adjustedRombank(rombank_) & (rombanks(memptrs_) - 1)); }
 };
 
-enum Tpp1SramMap {
-	map_MRx,
-	map_SRO,
-	map_SRW,
-	map_RTC
-}
-
 class Tpp1 : public DefaultMbc {
 public:
-	explicit Tpp1(MemPtrs &memptrs, Rtc *const rtc)
+	explicit Tpp1(MemPtrs &memptrs, Tpp1X *const tpp1x)
 	: memptrs_(memptrs)
-	, rtc_(rtc)
+	, tpp1x_(tpp1x)
 	, rombank_(1)
 	, rambank_(0)
-	, mapmode_(map_MRx)
+	, mapmode_(0)
 	{
 	}
 
@@ -494,24 +487,19 @@ public:
 			break;
 		case 3: // MR3
 			switch(data) {
-			case 0x00:
-				mapmode_ = map_MRx;
-				setRambank();
-				break;
-			case 0x02:
-				mapmode_ = map_SRO;
-				setRambank();
-				break;
-			case 0x03:
-				mapmode_ = map_SRW;
-				setRambank();
-				break;
-			case 0x05:
-				mapmode_ = map_RTC;
-				setRambank();
-				break;
-			// TODO: RTC handling
-			// TODO: add rumble support
+			case 0x00: mapmode_ = 0; tpp1x_->setMap(0); setRambank(); break;
+ 			case 0x02: mapmode_ = 1; tpp1x_->setMap(1); setRambank(); break;
+ 			case 0x03: mapmode_ = 2; tpp1x_->setMap(2); setRambank(); break;
+ 			case 0x05: mapmode_ = 3; tpp1x_->setMap(3); setRambank(); break;
+			case 0x10: tpp1x_->latch(); break;
+			case 0x11: tpp1x_->settime(); break;
+			case 0x14: tpp1x_->resetOverflow(); break;
+			case 0x18: tpp1x_->halt(); break;
+			case 0x19: tpp1x_->resume(); break;
+			case 0x20:
+			case 0x21:
+			case 0x22:
+			case 0x23: tpp1x_->rumble(data & 3); break;
 			}
 			break;
 		}
@@ -520,67 +508,53 @@ public:
 	virtual void saveState(SaveState::Mem &ss) const {
 		ss.rombank = rombank_;
 		ss.rambank = rambank_;
-		ss.tpp1SramMap = mapmode_;
 	}
 
 	virtual void loadState(SaveState::Mem const &ss) {
 		rombank_ = ss.rombank;
 		rambank_ = ss.rambank;
-		mapmode_ = ss.tpp1SramMap;
 		setRambank();
 		setRombank();
-	}
-	
-	unsigned char readSpecialSram(unsigned const p) {
-		switch (mapmode_) {
-		case map_MRx:
-			switch (p & 3) {
-			case 0: return rombank_ & 0x00FF;
-			case 1: return (rombank_ & 0xFF00) >> 8;
-			case 2: return rambank_;
-			case 3: return 0; // TODO
-			}
-//		case map_RTC:
-		}
 	}
 
 private:
 	MemPtrs &memptrs_;
-	Rtc *const rtc_;
+	Tpp1X *const tpp1x_;
 	unsigned short rombank_;
 	unsigned char rambank_;
 	unsigned char mapmode_;
 
-	static unsigned adjustedRombank(unsigned bank) { return bank; }
-
 	void setRambank() const {
 		unsigned flags = 0;
 		switch (mapmode_) {
-			case map_MRx: flags = MemPtrs::read_en | MemPtrs::specialmap; break;
-			case map_SRO: flags = MemPtrs::read_en; break;
-			case map_SRW: flags = MemPtrs::read_en | MemPtrs::write_en; break;
-			case map_RTC: flags = rtc_ ? MemPtrs::read_en | MemPtrs::write_en | MemPtrs::specialmap : 0; break;
+			case 0: flags = MemPtrs::read_en | MemPtrs::rtc_en; break;
+			case 1: flags = MemPtrs::read_en; break;
+			case 2: flags = MemPtrs::read_en | MemPtrs::write_en; break;
+			case 3: flags = tpp1x_->features() & 4 ? MemPtrs::read_en | MemPtrs::write_en | MemPtrs::rtc_en : 0; break;
 		}
 		memptrs_.setRambank(flags, rambank_ & (rambanks(memptrs_) - 1));
 	}
 
-	void setRombank() const { memptrs_.setRombank(adjustedRombank(rombank_) & (rombanks(memptrs_) - 1)); }
-	
-	// TODO RTC handling
+	void setRombank() const {
+		tpp1x_->setRombank(rombank_);
+		memptrs_.setRombank(rombank_ & (rombanks(memptrs_) - 1));
+	}
 };
 
-static bool hasRtc(unsigned headerByte0x147) {
-	switch (headerByte0x147) {
+static bool checkTPP1(unsigned char * header) {
+	return header[0x0147] == 0xBC && header[0x0149] == 0xC1 && header[0x014A] == 0x65;
+}
+
+}
+
+static bool hasRtc(unsigned char * header) {
+	if (checkTPP1(header)) return header[0x153] & 4;
+	switch (header[0x0147]) {
 	case 0x0F:
 	case 0x10: return true;
 	default: return false;
 	}
 }
-
-}
-
-bool Cartridge::isTPP1() { return dynamic_cast<Tpp1*>(&mbc_) != 0; }
-unsigned char Cartridge::readTPP1SpecialSram(unsigned const p) { return dynamic_cast<Tpp1*>(&mbc_)->readSpecialSram(p); }
 
 void Cartridge::setStatePtrs(SaveState &state) {
 	state.mem.vram.set(memptrs_.vramdata(), memptrs_.vramdataend() - memptrs_.vramdata());
@@ -590,11 +564,13 @@ void Cartridge::setStatePtrs(SaveState &state) {
 
 void Cartridge::saveState(SaveState &state) const {
 	mbc_->saveState(state.mem);
-	rtc_.saveState(state);
+	if (tpp1x_.isTPP1()) tpp1x_.saveState(state);
+	else rtc_.saveState(state);
 }
 
 void Cartridge::loadState(SaveState const &state) {
-	rtc_.loadState(state);
+	if (tpp1x_.isTPP1()) tpp1x_.loadState(state);
+	else rtc_.loadState(state);
 	mbc_->loadState(state.mem);
 }
 
@@ -702,7 +678,7 @@ LoadRes Cartridge::loadROM(std::string const &romfile,
 		case 0x20: return LOADRES_UNSUPPORTED_MBC_MBC6;
 		case 0x22: return LOADRES_UNSUPPORTED_MBC_MBC7;
 		case 0xBC:
-			if (header[0x0149] == 0xC1 && header[0x014A] == 0x65) { type = type_tpp1; break; }
+			if (checkTPP1(header)) { type = type_tpp1; break; }
 			else return LOADRES_BAD_FILE_OR_UNKNOWN_MBC; // broken TPP1 header
 		case 0xFC: return LOADRES_UNSUPPORTED_MBC_POCKET_CAMERA;
 		case 0xFD: return LOADRES_UNSUPPORTED_MBC_TAMA5;
@@ -743,6 +719,7 @@ LoadRes Cartridge::loadROM(std::string const &romfile,
 	mbc_.reset();
 	memptrs_.reset(rombanks, rambanks, cgb ? 8 : 2);
 	rtc_.set(false, 0);
+	tpp1x_.set(false, 0);
 
 	rom->rewind();
 	rom->read(reinterpret_cast<char*>(memptrs_.romdata()), filesize / 0x4000 * 0x4000ul);
@@ -767,20 +744,22 @@ LoadRes Cartridge::loadROM(std::string const &romfile,
 		break;
 	case type_mbc2: mbc_.reset(new Mbc2(memptrs_)); break;
 	case type_mbc3:
-		mbc_.reset(new Mbc3(memptrs_, hasRtc(memptrs_.romdata()[0x147]) ? &rtc_ : 0));
+		mbc_.reset(new Mbc3(memptrs_, hasRtc(memptrs_.romdata()) ? &rtc_ : 0));
 		break;
 	case type_mbc5: mbc_.reset(new Mbc5(memptrs_)); break;
 	case type_huc1: mbc_.reset(new HuC1(memptrs_)); break;
 	case type_tpp1:
-		mbc_.reset(new Tpp1(memptrs_, memptrs_.romdata()[0x153] & 4 ? &rtc_ : 0));
+		tpp1x_.set(true, memptrs_.romdata()[0x153]);
+		mbc_.reset(new Tpp1(memptrs_, &tpp1x_));
 		break;
 	}
 
 	return LOADRES_OK;
 }
 
-static bool hasBattery(unsigned char headerByte0x147) {
-	switch (headerByte0x147) {
+static bool hasBattery(unsigned char * header) {
+	if (checkTPP1(header)) return header[0x0152] | (header[0x0153] & 4);
+	switch (header[0x0147]) {
 	case 0x03:
 	case 0x06:
 	case 0x09:
@@ -797,7 +776,7 @@ static bool hasBattery(unsigned char headerByte0x147) {
 void Cartridge::loadSavedata() {
 	std::string const &sbp = saveBasePath();
 
-	if (hasBattery(memptrs_.romdata()[0x147])) {
+	if (hasBattery(memptrs_.romdata())) {
 		std::ifstream file((sbp + ".sav").c_str(), std::ios::binary | std::ios::in);
 
 		if (file.is_open()) {
@@ -807,14 +786,15 @@ void Cartridge::loadSavedata() {
 		}
 	}
 
-	if (hasRtc(memptrs_.romdata()[0x147])) {
+	if (hasRtc(memptrs_.romdata())) {
 		std::ifstream file((sbp + ".rtc").c_str(), std::ios::binary | std::ios::in);
 		if (file) {
 			unsigned long basetime =    file.get() & 0xFF;
 			basetime = basetime << 8 | (file.get() & 0xFF);
 			basetime = basetime << 8 | (file.get() & 0xFF);
 			basetime = basetime << 8 | (file.get() & 0xFF);
-			rtc_.setBaseTime(basetime);
+			if (checkTPP1(memptrs_.romdata())) tpp1x_.setBaseTime(basetime);
+			else rtc_.setBaseTime(basetime);
 		}
 	}
 }
@@ -822,15 +802,15 @@ void Cartridge::loadSavedata() {
 void Cartridge::saveSavedata() {
 	std::string const &sbp = saveBasePath();
 
-	if (hasBattery(memptrs_.romdata()[0x147])) {
+	if (hasBattery(memptrs_.romdata())) {
 		std::ofstream file((sbp + ".sav").c_str(), std::ios::binary | std::ios::out);
 		file.write(reinterpret_cast<char const *>(memptrs_.rambankdata()),
 		           memptrs_.rambankdataend() - memptrs_.rambankdata());
 	}
 
-	if (hasRtc(memptrs_.romdata()[0x147])) {
+	if (hasRtc(memptrs_.romdata())) {
 		std::ofstream file((sbp + ".rtc").c_str(), std::ios::binary | std::ios::out);
-		unsigned long const basetime = rtc_.baseTime();
+		unsigned long const basetime = checkTPP1(memptrs_.romdata()) ? tpp1x_.baseTime() : rtc_.baseTime();
 		file.put(basetime >> 24 & 0xFF);
 		file.put(basetime >> 16 & 0xFF);
 		file.put(basetime >>  8 & 0xFF);

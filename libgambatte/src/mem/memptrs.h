@@ -30,7 +30,7 @@ enum OamDmaSrc { oam_dma_src_rom,
 
 class MemPtrs {
 public:
-	enum RamFlag { read_en = 1, write_en = 2, specialmap = 4 };
+	enum RamFlag { read_en = 1, write_en = 2, rtc_en = 4 };
 
 	MemPtrs();
 	~MemPtrs();

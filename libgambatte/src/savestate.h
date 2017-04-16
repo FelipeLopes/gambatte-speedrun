@@ -83,7 +83,6 @@ struct SaveState {
 		unsigned char /*bool*/ cgbSwitching;
 		unsigned char /*bool*/ agbMode;
 		unsigned char /*bool*/ gbIsCgb;
-		unsigned char tpp1SramMap;
 	} mem;
 
 	struct PPU {

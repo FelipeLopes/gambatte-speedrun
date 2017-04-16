@@ -409,7 +409,9 @@ void Memory::updateOamDma(unsigned long const cc) {
 			if (oamDmaPos_ == 0)
 				startOamDma(lastOamDmaUpdate_ - 1);
 
-			ioamhram_[oamDmaPos_] = oamDmaSrc ? oamDmaSrc[oamDmaPos_] : cart_.mbc3RtcRead();
+			if (oamDmaSrc) ioamhram_[oamDmaPos_] = oamDmaSrc[oamDmaPos_];
+			else if (cart_.isTPP1()) ioamhram_[oamDmaPos_] = cart_.TPP1Read(oamDmaPos_);
+			else ioamhram_[oamDmaPos_] = cart_.rtcRead();
 		} else if (oamDmaPos_ == 0xA0) {
 			endOamDma(lastOamDmaUpdate_ - 1);
 			lastOamDmaUpdate_ = disabled_time;
@@ -574,11 +576,9 @@ unsigned Memory::nontrivial_read(unsigned const p, unsigned long const cc) {
 				return cart_.vrambankptr()[p];
 			}
 
-			if (cart_.rsrambankptr())
-				return cart_.rsrambankptr()[p];
-			if (cart_.isTPP1())
-				return cart_.readTPP1SpecialSram(p);
-			return cart_.mbc3RtcRead();
+			if (cart_.rsrambankptr()) return cart_.rsrambankptr()[p];
+			if (cart_.isTPP1()) return cart_.TPP1Read(p);
+			return cart_.rtcRead();
 		}
 
 		if (p < 0xFE00)
@@ -1052,13 +1052,9 @@ void Memory::nontrivial_write(unsigned const p, unsigned const data, unsigned lo
 				cart_.vrambankptr()[p] = data;
 			}
 		} else if (p < 0xC000) {
-			if (cart_.wsrambankptr())
-				cart_.wsrambankptr()[p] = data;
-			else {
-				// TPP1 MRx map is read-only by specification
-				// TODO add TPP1 RTC write handling here
-				cart_.mbc3RtcWrite(data);
-			}
+			if (cart_.wsrambankptr()) cart_.wsrambankptr()[p] = data;
+			else if (cart_.isTPP1()) cart_.TPP1Write(p, data);
+			else cart_.rtcWrite(data);
 		} else
 			cart_.wramdata(p >> 12 & 1)[p & 0xFFF] = data;
 	} else if (p - 0xFF80u >= 0x7Fu) {

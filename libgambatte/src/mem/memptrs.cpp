@@ -66,7 +66,6 @@ void MemPtrs::reset(unsigned const rombanks, unsigned const rambanks, unsigned c
 	setRambank(0, 0);
 	setVrambank(0);
 	setWrambank(1);
-	
 }
 
 void MemPtrs::setRombank0(unsigned bank) {
@@ -83,7 +82,7 @@ void MemPtrs::setRombank(unsigned bank) {
 
 void MemPtrs::setRambank(unsigned const flags, unsigned const rambank) {
 	unsigned char *srambankptr = 0;
-	if (!(flags & specialmap)) {
+	if (!(flags & rtc_en)) {
 		srambankptr = rambankdata() != rambankdataend()
 		            ? rambankdata_ + rambank * 0x2000ul - 0xA000
 		            : wdisabledRam() - 0xA000;

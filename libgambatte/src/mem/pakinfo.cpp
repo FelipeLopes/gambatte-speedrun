@@ -14,6 +14,7 @@ static bool isHeaderChecksumOk(unsigned const char header[]) {
 }
 
 static bool isMbc2(unsigned char h147) { return h147 == 5 || h147 == 6; }
+static bool isTPP1(unsigned const char * h144x) { return h144x[3] == 0xBC && h144x[5] == 0xC1 && h144x[6] == 0x65; }
 
 unsigned numRambanksFromH14x(unsigned char h147, unsigned char h149) {
 	switch (h149) {
@@ -77,8 +78,22 @@ static char const * h147ToCstr(unsigned char const h147) {
 	return "Unknown";
 }
 
+std::string const TPP1ToCstr(unsigned char const h152, unsigned char const h153) {
+	std::string t = "TPP1";
+	if (!(h152 | h153)) return t;
+	t += " [";
+	if (h152) t += "RAM,";
+	if (h153 & 4) t += "RTC,";
+	if ((h153 & 3) == 3) t += "rumble+,";
+	if (h153 & 1) t += "rumble,";
+	if (h152 | (h153 & 4)) t += "battery,";
+	t.back() = ']';
+	return t;
+}
+
 std::string const PakInfo::mbc() const {
 	std::string h147str = h147ToCstr(h144x_[3]);
+	if (isTPP1(h144x_)) h147str = TPP1ToCstr(h144x_[14], h144x_[15]);
 
 	if (flags_ & flag_multipak)
 		h147str += " (Custom MultiPak)";
@@ -86,7 +101,14 @@ std::string const PakInfo::mbc() const {
 	return h147str;
 }
 
-unsigned PakInfo::rambanks() const { return numRambanksFromH14x(h144x_[3], h144x_[5]); }
+unsigned PakInfo::rambanks() const {
+	if (isTPP1(h144x_)) {
+		if(h144x_[14] == 0) return 0;
+		else return 1 << std::max(h144x_[14] - 1, 8);
+	}
+	return numRambanksFromH14x(h144x_[3], h144x_[5]);
+}
+
 unsigned PakInfo::rombanks() const { return rombanks_; }
 unsigned PakInfo::crc() const { return crc_; }
 
