@@ -532,6 +532,7 @@ private:
 			case 2: flags = MemPtrs::read_en | MemPtrs::write_en; break;
 			case 3: flags = tpp1x_->features() & 4 ? MemPtrs::read_en | MemPtrs::write_en | MemPtrs::rtc_en : 0; break;
 		}
+		tpp1x_->setRambank(rambank_);
 		memptrs_.setRambank(flags, rambank_ & (rambanks(memptrs_) - 1));
 	}
 

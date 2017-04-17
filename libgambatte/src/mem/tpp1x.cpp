@@ -42,7 +42,7 @@ Tpp1X::Tpp1X()
 void Tpp1X::latch() {
 	std::time_t tmp = (running_ ? std::time(0) : haltTime_) - baseTime_;
 
-	while (tmp > 154828800) {
+	while (tmp >= 154828800) {
 		baseTime_ += 154828800;
 		tmp -= 154828800;
 		overflow_ = true;
@@ -51,7 +51,9 @@ void Tpp1X::latch() {
 	dataW_ = tmp / 604800;
 	tmp %= 604800;
 
-	dataH_ = tmp / 3600;
+	dataH_ = (tmp / 86400) << 5;
+	tmp %= 86400;
+	dataH_ |= tmp / 3600;
 	tmp %= 3600;
 
 	dataM_ = tmp / 60;
@@ -62,7 +64,7 @@ void Tpp1X::latch() {
 
 void Tpp1X::settime() {
 	baseTime_ = running_ ? std::time(0) : haltTime_;
-	baseTime_ -= dataS_ + (dataM_ * 60) + (dataH_ * 3600) + (dataW_ * 604800);
+	baseTime_ -= dataS_ + (dataM_ * 60) + ((dataH_ & 0x1F) * 3600) + (((dataH_ & 0xE0) >> 5) * 86400) + (dataW_ * 604800);
 }
 
 void Tpp1X::halt() {
@@ -92,7 +94,7 @@ void Tpp1X::saveState(SaveState &state) const {
 	state.rtc.dataH = dataH_;
 	state.rtc.dataM = dataM_;
 	state.rtc.dataS = dataS_;
-	state.rtc.lastLatchData = (features_ << 4) | (enabled_ << 2) | (running_ << 1) | overflow_;
+	state.rtc.lastLatchData = (running_ << 1) | overflow_;
 }
 
 void Tpp1X::loadState(SaveState const &state) {
@@ -104,8 +106,6 @@ void Tpp1X::loadState(SaveState const &state) {
 	dataH_ = state.rtc.dataH;
 	dataM_ = state.rtc.dataM;
 	dataS_ = state.rtc.dataS;
-	features_ = (state.rtc.lastLatchData & 0xF0) >> 4;
-	enabled_ = state.rtc.lastLatchData & 4;
 	running_ = state.rtc.lastLatchData & 2;
 	overflow_ = state.rtc.lastLatchData & 1;
 }
