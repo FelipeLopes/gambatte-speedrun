@@ -87,7 +87,7 @@ std::string const TPP1ToCstr(unsigned char const h152, unsigned char const h153)
 	if ((h153 & 3) == 3) t += "rumble+,";
 	if (h153 & 1) t += "rumble,";
 	if (h152 | (h153 & 4)) t += "battery,";
-	t.back() = ']';
+	t[t.size() - 1] = ']';
 	return t;
 }
 
