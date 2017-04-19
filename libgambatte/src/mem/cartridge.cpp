@@ -759,7 +759,7 @@ LoadRes Cartridge::loadROM(std::string const &romfile,
 }
 
 static bool hasBattery(unsigned char * header) {
-	if (checkTPP1(header)) return header[0x0152] | (header[0x0153] & 4);
+	if (checkTPP1(header)) return header[0x0153] & 8;
 	switch (header[0x0147]) {
 	case 0x03:
 	case 0x06:
