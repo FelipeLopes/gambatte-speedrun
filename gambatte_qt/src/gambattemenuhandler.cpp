@@ -370,6 +370,8 @@ GambatteMenuHandler::GambatteMenuHandler(MainWindow &mw,
 		}
 
 		fileMenu->addSeparator();
+		fileMenu->addAction(tr("Load Lua S&cript..."), this, SLOT(loadLua()));
+		fileMenu->addSeparator();
 		fileMenu->addAction(tr("&Quit"), qApp, SLOT(closeAllWindows()), tr("Ctrl+Q"));
 		updateRecentFileActions();
 	}
@@ -413,13 +415,13 @@ GambatteMenuHandler::GambatteMenuHandler(MainWindow &mw,
 #endif
 
 	settingsm->addAction(tr("Select GBC Bios Image..."), this, SLOT(openGBCBios()));
-	
+
 #ifdef DMG_SUPPORT
 	settingsm->addSeparator();
 	dmgModeAction_ = settingsm->addAction(tr("DMG Mode"));
 	dmgModeAction_->setCheckable(true);
 	dmgModeAction_->setChecked(QSettings().value("dmgmode-sr", false).toBool());
-	
+
 	settingsm->addAction(tr("Select DMG Bios Image..."), this, SLOT(openDMGBios()));
 #endif
 
@@ -571,7 +573,7 @@ void GambatteMenuHandler::loadFile(QString const &fileName) {
 			QMessageBox::critical(
 				&mw_,
 				tr("Bios Load Error"),
-				(tr("Could not load DMG bios.\n") + 
+				(tr("Could not load DMG bios.\n") +
 				"Gambatte-Speedrun requires a DMG bios to function when DMG mode is on.\n" +
 				"Please use Settings > Select DMG Bios Image to specify the location of such a file."));
 			return;
@@ -586,13 +588,13 @@ void GambatteMenuHandler::loadFile(QString const &fileName) {
 			QMessageBox::critical(
 				&mw_,
 				tr("Bios Load Error"),
-				(tr("Could not load GBC bios.\n") + 
+				(tr("Could not load GBC bios.\n") +
 				"Gambatte-Speedrun requires a GBC bios to function.\n" +
 				"Please use Settings > Select GBC Bios Image to specify the location of such a file."));
 			return;
 		}
 	}
-	
+
 	std::cout << "Loading rom..." << std::endl;
 
 	if (gambatte::LoadRes const error =
@@ -651,7 +653,7 @@ void GambatteMenuHandler::loadFile(QString const &fileName) {
 	if(romTitle.toStdString() == "PM_CRYSTAL" && (pak.crc() == 0xEE6F5188 || pak.crc() == 0x3358E30A)) {
 		goodRom = true;
 	}
-	
+
 
 	QString revision = QString("interim");
 	#ifdef GAMBATTE_QT_VERSION_STR
@@ -1027,6 +1029,10 @@ void GambatteMenuHandler::frameStep() {
 		mw_.frameStep();
 	else
 		pauseAction_->trigger();
+}
+
+void GambatteMenuHandler::loadLua() {
+	printf("load lua was called\n");
 }
 
 void GambatteMenuHandler::escPressed() {

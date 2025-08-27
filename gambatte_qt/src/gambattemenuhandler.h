@@ -190,6 +190,7 @@ private slots:
 	void saveStateAs();
 	void loadState();
 	void loadStateFrom();
+	void loadLua();
 	void reset();
 	void pauseChange();
 	void frameStep();
