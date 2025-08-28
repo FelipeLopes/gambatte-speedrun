@@ -33,6 +33,7 @@
 #include <QtWidgets>
 #endif
 #include <iostream>
+#include <sol/sol.hpp>
 
 namespace {
 
@@ -1032,7 +1033,17 @@ void GambatteMenuHandler::frameStep() {
 }
 
 void GambatteMenuHandler::loadLua() {
-	printf("load lua was called\n");
+	auto luaFileName = QFileDialog::getOpenFileName(&mw_, tr("Open Lua script"),
+		"", tr("Lua scripts (*.lua)")).toUtf8().toStdString();
+	if (!luaFileName.empty()) {
+		sol::state lua;
+		lua.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math, sol::lib::table);
+		try {
+			lua.safe_script_file(luaFileName.c_str());
+		} catch (const sol::error& e) {
+			printf("%s\n", std::string(e.what()).c_str());
+		}
+	}
 }
 
 void GambatteMenuHandler::escPressed() {

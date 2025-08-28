@@ -51,7 +51,7 @@ INCLUDEPATH += framework/src/SDL_Joystick/include
 INCLUDEPATH += $$COMMONPATH
 DEPENDPATH  += $$COMMONPATH
 DEPENDPATH  += framework/include
-DEFINES += HAVE_STDINT_H
+DEFINES += HAVE_STDINT_H SOL_ALL_SAFETIES_ON
 
 macx {
 #    CONFIG += x86 ppc
@@ -76,8 +76,9 @@ macx {
 #	    -framework OpenAL \
             -framework AudioUnit
 }
-else:unix { 
+else:unix {
     DEFINES += PLATFORM_UNIX
+    INCLUDEPATH += /usr/include/lua5.4
     SOURCES += \
         framework/src/addblitterwidgets_unix.cpp \
         framework/src/getfullmodetoggler_unix.cpp \
@@ -96,18 +97,19 @@ else:unix {
         -lX11 \
         -lXext \
         -lXv \
+        -llua5.4 \
         -lXrandr #\
 #        -lXxf86vm \
 #        -lXinerama
-    linux-* { 
+    linux-* {
         SOURCES += framework/src/addaudioengines_linux.cpp \
             framework/src/audioengines/alsaengine.cpp \
             framework/src/SDL_Joystick/src/linux/SDL_sysjoystick.c
         LIBS += -lasound
     }
-    else { 
+    else {
         SOURCES += framework/src/addaudioengines_unix.cpp
-        freebsd-*|netbsd-*|openbsd-* { 
+        freebsd-*|netbsd-*|openbsd-* {
             exists( /usr/include/usb.h ):DEFINES += HAVE_USB_H
             exists( /usr/include/usbhid.h ):DEFINES += HAVE_USBHID_H
             exists( /usr/include/libusb.h ):DEFINES += HAVE_LIBUSB_H
@@ -120,7 +122,7 @@ else:unix {
         else:SOURCES += framework/src/SDL_Joystick/src/dummy/SDL_sysjoystick.c
     }
 }
-else:win32 { 
+else:win32 {
     DEFINES += PLATFORM_WIN32
     SOURCES += framework/src/gdisettings.cpp \
         framework/src/blitterwidgets/direct3dblitter.cpp \
@@ -138,7 +140,7 @@ else:win32 {
         -ldxguid \
         -ldsound
 }
-else { 
+else {
     SOURCES += framework/src/addaudioengines.cpp \
         framework/src/addblitterwidgets.cpp \
         framework/src/getfullmodetoggler.cpp \

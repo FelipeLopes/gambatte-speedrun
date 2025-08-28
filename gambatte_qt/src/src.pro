@@ -23,7 +23,7 @@ TEMPLATE = app
 CONFIG += warn_on \
     release
 QMAKE_CFLAGS   += -fomit-frame-pointer
-QMAKE_CXXFLAGS += -fomit-frame-pointer -fno-exceptions -fno-rtti -fpermissive
+QMAKE_CXXFLAGS += -fomit-frame-pointer -fpermissive
 TARGET = gambatte_qt
 
 macx:TARGET = "Gambatte Qt"
