@@ -23,6 +23,7 @@
 #include <QList>
 #include <QObject>
 #include <QSize>
+#include <sol/sol.hpp>
 
 class CheatDialog;
 class GambatteSource;
@@ -152,6 +153,7 @@ private:
 	QActionGroup *const stateSlotGroup_;
 	WindowSizeMenu windowSizeMenu_;
 	int pauseInc_;
+	sol::state lua_;
 
 	void loadFile(QString const &fileName);
 	void setCurrentFile(QString const &fileName);

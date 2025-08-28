@@ -74,6 +74,12 @@ public:
 	unsigned char* dmgBiosBuffer() { return mem_.dmgBiosBuffer(); }
 	bool gbIsCgb() { return mem_.gbIsCgb(); }
 
+	std::function<int(int)> getMemoryReadFunction() {
+		return [this](int addr) {
+			return mem_.read(addr, cycleCounter_);
+		};
+	}
+
 private:
 	Memory mem_;
 	unsigned long cycleCounter_;

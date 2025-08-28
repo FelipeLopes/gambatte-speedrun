@@ -29,6 +29,7 @@
 #include <pakinfo.h>
 #include <QObject>
 #include <cstring>
+#include <sol/sol.hpp>
 
 class GambatteSource : public QObject, public MediaSource {
 public:
@@ -57,6 +58,7 @@ public:
 	QDialog * inputDialog() const { return inputDialog_; }
 	void saveState(PixelBuffer const &fb);
 	void loadState() { gb_.loadState(); }
+	void initLua(sol::state& lua);
 
 	virtual void keyPressEvent(QKeyEvent const *);
 	virtual void keyReleaseEvent(QKeyEvent const *);

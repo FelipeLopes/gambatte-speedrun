@@ -329,3 +329,8 @@ void GambatteSource::saveState(PixelBuffer const &pb, std::string const &filepat
 	GbVidBuf gbvidbuf = setPixelBuffer(getpbdata(pb, vsrci_), pb.pixelFormat, pb.pitch);
 	gb_.saveState(gbvidbuf.pixels, gbvidbuf.pitch, filepath);
 }
+
+void GambatteSource::initLua(sol::state& lua) {
+	lua["gb"] = lua.create_table_with();
+	lua["gb"]["read_memory"] = gb_.getMemoryReadFunction();
+}

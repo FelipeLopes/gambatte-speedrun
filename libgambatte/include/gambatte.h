@@ -24,6 +24,7 @@
 #include "loadres.h"
 #include <cstddef>
 #include <string>
+#include <functional>
 
 namespace gambatte {
 
@@ -182,6 +183,8 @@ public:
 	  * @param codes Game Shark codes in format 01HHHHHH;01HHHHHH;... where H is [0-9]|[A-F]
 	  */
 	void setGameShark(std::string const &codes);
+
+	std::function<int(int)> getMemoryReadFunction();
 
 private:
 	struct Priv;

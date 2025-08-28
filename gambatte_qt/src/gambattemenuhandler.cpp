@@ -504,6 +504,9 @@ GambatteMenuHandler::GambatteMenuHandler(MainWindow &mw,
 			break;
 		}
 	}
+
+	lua_.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math, sol::lib::table);
+	source_.initLua(lua_);
 }
 
 GambatteMenuHandler::~GambatteMenuHandler() {
@@ -1036,10 +1039,8 @@ void GambatteMenuHandler::loadLua() {
 	auto luaFileName = QFileDialog::getOpenFileName(&mw_, tr("Open Lua script"),
 		"", tr("Lua scripts (*.lua)")).toUtf8().toStdString();
 	if (!luaFileName.empty()) {
-		sol::state lua;
-		lua.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math, sol::lib::table);
 		try {
-			lua.safe_script_file(luaFileName.c_str());
+			lua_.safe_script_file(luaFileName.c_str());
 		} catch (const sol::error& e) {
 			printf("%s\n", std::string(e.what()).c_str());
 		}

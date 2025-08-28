@@ -119,26 +119,26 @@ unsigned int GB::loadGBCBios(std::string const &biosfile) {
 	scoped_ptr<File> const bios(newFileInstance(biosfile));
 	char newBiosBuffer[0x900];
 	int i, sz;
-	
+
 	if (bios->fail())
 		return -1;
-	
+
 	sz = bios->size();
 	if (sz != 0x900)
 		return -2;
-	
+
 	bios->read(newBiosBuffer, sz);
 	if (bios->fail())
 		return -1;
-	
+
 	for(i=0x100;i<0x200;i++) {
 		if(newBiosBuffer[i] != 0x00) {
 			return -3;
 		}
 	}
-	
+
 	memcpy(p_->cpu.cgbBiosBuffer(), newBiosBuffer, sz);
-	
+
 	return 0;
 }
 
@@ -146,20 +146,20 @@ unsigned int GB::loadDMGBios(std::string const &biosfile) {
 	scoped_ptr<File> const bios(newFileInstance(biosfile));
 	char newBiosBuffer[0x100];
 	int i, sz;
-	
+
 	if (bios->fail())
 		return -1;
-	
+
 	sz = bios->size();
 	if (sz != 0x100)
 		return -2;
-	
+
 	bios->read(newBiosBuffer, sz);
 	if (bios->fail())
 		return -1;
-	
+
 	memcpy(p_->cpu.dmgBiosBuffer(), newBiosBuffer, sz);
-	
+
 	return 0;
 }
 
@@ -258,6 +258,10 @@ void GB::setGameGenie(std::string const &codes) {
 
 void GB::setGameShark(std::string const &codes) {
 	p_->cpu.setGameShark(codes);
+}
+
+std::function<int(int)> GB::getMemoryReadFunction() {
+	return p_->cpu.getMemoryReadFunction();
 }
 
 }
