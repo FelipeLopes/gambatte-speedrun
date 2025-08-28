@@ -185,6 +185,8 @@ public:
 	void setGameShark(std::string const &codes);
 
 	std::function<int(int)> getMemoryReadFunction();
+	void addTimerInterruptCallback(std::function<void()> callback);
+	void clearTimerInterruptCallbacks();
 
 private:
 	struct Priv;

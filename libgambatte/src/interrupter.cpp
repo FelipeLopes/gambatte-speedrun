@@ -40,6 +40,12 @@ unsigned long Interrupter::interrupt(unsigned const address, unsigned long cc, M
 	if (address == 0x40 && !gsCodes_.empty())
 		applyVblankCheats(cc, memory);
 
+	if (address == 0x50 && !timerInterruptCallbacks_.empty()) {
+		for (auto callback: timerInterruptCallbacks_) {
+			callback();
+		}
+	}
+
 	return cc;
 }
 
@@ -64,6 +70,14 @@ void Interrupter::setGameShark(std::string const &codes) {
 			gsCodes_.push_back(gs);
 		}
 	}
+}
+
+void Interrupter::addTimerInterruptCallback(std::function<void()> callback) {
+	timerInterruptCallbacks_.push_back(callback);
+}
+
+void Interrupter::clearTimerInterruptCallbacks() {
+	timerInterruptCallbacks_.clear();
 }
 
 void Interrupter::applyVblankCheats(unsigned long const cc, Memory &memory) {

@@ -264,4 +264,12 @@ std::function<int(int)> GB::getMemoryReadFunction() {
 	return p_->cpu.getMemoryReadFunction();
 }
 
+void GB::addTimerInterruptCallback(std::function<void()> callback) {
+	p_->cpu.addTimerInterruptCallback(callback);
+}
+
+void GB::clearTimerInterruptCallbacks() {
+	p_->cpu.clearTimerInterruptCallbacks();
+}
+
 }

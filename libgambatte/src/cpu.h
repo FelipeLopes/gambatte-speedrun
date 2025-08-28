@@ -70,6 +70,12 @@ public:
 
 	void setGameGenie(std::string const &codes) { mem_.setGameGenie(codes); }
 	void setGameShark(std::string const &codes) { mem_.setGameShark(codes); }
+	void addTimerInterruptCallback(std::function<void()> callback) {
+		mem_.addTimerInterruptCallback(callback);
+	}
+	void clearTimerInterruptCallbacks() {
+		mem_.clearTimerInterruptCallbacks();
+	}
 	unsigned char* cgbBiosBuffer() { return mem_.cgbBiosBuffer(); }
 	unsigned char* dmgBiosBuffer() { return mem_.dmgBiosBuffer(); }
 	bool gbIsCgb() { return mem_.gbIsCgb(); }

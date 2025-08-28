@@ -59,6 +59,7 @@ public:
 	void saveState(PixelBuffer const &fb);
 	void loadState() { gb_.loadState(); }
 	void initLua(sol::state& lua);
+	void clearLua();
 
 	virtual void keyPressEvent(QKeyEvent const *);
 	virtual void keyReleaseEvent(QKeyEvent const *);

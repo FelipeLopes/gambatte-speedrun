@@ -371,7 +371,8 @@ GambatteMenuHandler::GambatteMenuHandler(MainWindow &mw,
 		}
 
 		fileMenu->addSeparator();
-		fileMenu->addAction(tr("Load Lua S&cript..."), this, SLOT(loadLua()));
+		fileMenu->addAction(tr("Load Lua Scri&pt..."), this, SLOT(loadLua()));
+		fileMenu->addAction(tr("&Delete Lua Listeners"), this, SLOT(clearLua()));
 		fileMenu->addSeparator();
 		fileMenu->addAction(tr("&Quit"), qApp, SLOT(closeAllWindows()), tr("Ctrl+Q"));
 		updateRecentFileActions();
@@ -1045,6 +1046,10 @@ void GambatteMenuHandler::loadLua() {
 			printf("%s\n", std::string(e.what()).c_str());
 		}
 	}
+}
+
+void GambatteMenuHandler::clearLua() {
+	source_.clearLua();
 }
 
 void GambatteMenuHandler::escPressed() {

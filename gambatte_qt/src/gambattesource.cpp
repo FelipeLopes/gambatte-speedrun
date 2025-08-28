@@ -333,4 +333,11 @@ void GambatteSource::saveState(PixelBuffer const &pb, std::string const &filepat
 void GambatteSource::initLua(sol::state& lua) {
 	lua["gb"] = lua.create_table_with();
 	lua["gb"]["read_memory"] = gb_.getMemoryReadFunction();
+	lua["gb"]["on_timer_interrupt"] = [this](std::function<void()> f) {
+		gb_.addTimerInterruptCallback(f);
+	};
+}
+
+void GambatteSource::clearLua() {
+	gb_.clearTimerInterruptCallbacks();
 }

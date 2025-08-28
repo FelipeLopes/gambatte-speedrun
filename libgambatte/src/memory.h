@@ -67,7 +67,7 @@ public:
 	void halt() { intreq_.halt(); }
 	void ei(unsigned long cycleCounter) { if (!ime()) { intreq_.ei(cycleCounter); } }
 	void di() { intreq_.di(); }
-	
+
 	unsigned readBios(unsigned p) {
 		if(gbIsCgb_) {
 			if(agbMode_ && p >= 0xF3 && p < 0x100) {
@@ -119,13 +119,19 @@ public:
 	void setDmgPaletteColor(int palNum, int colorNum, unsigned long rgb32) {
 		lcd_.setDmgPaletteColor(palNum, colorNum, rgb32);
 	}
-    
+
     void blackScreen() {
         lcd_.blackScreen();
     }
 
 	void setGameGenie(std::string const &codes) { cart_.setGameGenie(codes); }
 	void setGameShark(std::string const &codes) { interrupter_.setGameShark(codes); }
+	void addTimerInterruptCallback(std::function<void()> callback) {
+		interrupter_.addTimerInterruptCallback(callback);
+	}
+	void clearTimerInterruptCallbacks() {
+		interrupter_.clearTimerInterruptCallbacks();
+	}
 	void updateInput();
 
 	unsigned char* cgbBiosBuffer() { return (unsigned char*) cgbBios; }

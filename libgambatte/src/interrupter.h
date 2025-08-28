@@ -21,6 +21,7 @@
 
 #include <string>
 #include <vector>
+#include <functional>
 
 namespace gambatte {
 
@@ -37,11 +38,14 @@ public:
 	Interrupter(unsigned short &sp, unsigned short &pc);
 	unsigned long interrupt(unsigned address, unsigned long cycleCounter, Memory &memory);
 	void setGameShark(std::string const &codes);
+	void addTimerInterruptCallback(std::function<void()> callback);
+	void clearTimerInterruptCallbacks();
 
 private:
 	unsigned short &sp_;
 	unsigned short &pc_;
 	std::vector<GsCode> gsCodes_;
+	std::vector<std::function<void()>> timerInterruptCallbacks_;
 
 	void applyVblankCheats(unsigned long cc, Memory &mem);
 };
