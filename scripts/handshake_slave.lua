@@ -5,7 +5,7 @@ function serial(a)
     doing_handshake = false
     return 0x29
   else
-    return 0xac
+    return a
   end
 end
 

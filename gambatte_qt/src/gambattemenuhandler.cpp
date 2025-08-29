@@ -506,7 +506,8 @@ GambatteMenuHandler::GambatteMenuHandler(MainWindow &mw,
 		}
 	}
 
-	lua_.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math, sol::lib::table);
+	lua_.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math,
+		sol::lib::table, sol::lib::package);
 	source_.initLua(lua_);
 }
 
