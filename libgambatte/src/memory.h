@@ -28,6 +28,9 @@ static unsigned char const agbOverride[0xD] = { 0xFF, 0x00, 0xCD, 0x03, 0x35, 0x
 #include "tima.h"
 #include "video.h"
 
+#include <optional>
+#include <functional>
+
 namespace gambatte {
 
 class InputGetter;
@@ -132,6 +135,9 @@ public:
 	void clearTimerInterruptCallbacks() {
 		interrupter_.clearTimerInterruptCallbacks();
 	}
+	void requestSerialInterrupt(unsigned long cc);
+	void setSerialExchangeCallback(std::function<int(int)> callback);
+	void clearSerialExchangeCallback();
 	void updateInput();
 
 	unsigned char* cgbBiosBuffer() { return (unsigned char*) cgbBios; }
@@ -160,6 +166,7 @@ private:
 	bool cgbSwitching_;
 	bool agbMode_;
 	bool gbIsCgb_;
+	std::optional<std::function<int(int)>> serialCallback_;
 
 	void decEventCycles(IntEventId eventId, unsigned long dec);
 	void oamDmaInitSetup();

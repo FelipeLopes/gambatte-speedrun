@@ -135,19 +135,34 @@ void Memory::setEndtime(unsigned long cc, unsigned long inc) {
 	intreq_.setEventTime<intevent_end>(cc + (inc << isDoubleSpeed()));
 }
 
+void Memory::requestSerialInterrupt(unsigned long cc) {
+	intreq_.setEventTime<intevent_serial>(cc);
+}
+
+void Memory::setSerialExchangeCallback(std::function<int(int)> callback) {
+	serialCallback_ = callback;
+}
+
+void Memory::clearSerialExchangeCallback() {
+	serialCallback_ = std::nullopt;
+}
+
 void Memory::updateSerial(unsigned long const cc) {
 	if (intreq_.eventTime(intevent_serial) != disabled_time) {
 		if (intreq_.eventTime(intevent_serial) <= cc) {
-			ioamhram_[0x101] = (((ioamhram_[0x101] + 1) << serialCnt_) - 1) & 0xFF;
+			//ioamhram_[0x101] = (((ioamhram_[0x101] + 1) << serialCnt_) - 1) & 0xFF;
+			if (serialCallback_.has_value()) {
+				ioamhram_[0x101] = serialCallback_.value()(ioamhram_[0x101]);
+			}
 			ioamhram_[0x102] &= 0x7F;
 			intreq_.setEventTime<intevent_serial>(disabled_time);
 			intreq_.flagIrq(8);
-		} else {
+		} /*else {
 			int const targetCnt = serialCntFrom(intreq_.eventTime(intevent_serial) - cc,
 			                                    ioamhram_[0x102] & isCgb() * 2);
 			ioamhram_[0x101] = (((ioamhram_[0x101] + 1) << (serialCnt_ - targetCnt)) - 1) & 0xFF;
 			serialCnt_ = targetCnt;
-		}
+		}*/
 	}
 }
 

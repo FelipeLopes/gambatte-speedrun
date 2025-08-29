@@ -76,6 +76,15 @@ public:
 	void clearTimerInterruptCallbacks() {
 		mem_.clearTimerInterruptCallbacks();
 	}
+	void requestSerialInterrupt() {
+		mem_.requestSerialInterrupt(cycleCounter_);
+	}
+	void setSerialExchangeCallback(std::function<int(int)> callback) {
+		mem_.setSerialExchangeCallback(callback);
+	}
+	void clearSerialExchangeCallback() {
+		mem_.clearSerialExchangeCallback();
+	}
 	unsigned char* cgbBiosBuffer() { return mem_.cgbBiosBuffer(); }
 	unsigned char* dmgBiosBuffer() { return mem_.dmgBiosBuffer(); }
 	bool gbIsCgb() { return mem_.gbIsCgb(); }

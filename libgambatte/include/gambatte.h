@@ -187,6 +187,9 @@ public:
 	std::function<int(int)> getMemoryReadFunction();
 	void addTimerInterruptCallback(std::function<void()> callback);
 	void clearTimerInterruptCallbacks();
+	void requestSerialInterrupt();
+	void setSerialExchangeCallback(std::function<int(int)> callback);
+	void clearSerialExchangeCallback();
 
 private:
 	struct Priv;

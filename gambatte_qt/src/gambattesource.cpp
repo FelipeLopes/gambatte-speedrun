@@ -336,8 +336,15 @@ void GambatteSource::initLua(sol::state& lua) {
 	lua["gb"]["on_timer_interrupt"] = [this](std::function<void()> f) {
 		gb_.addTimerInterruptCallback(f);
 	};
+	lua["gb"]["request_serial_interrupt"] = [this]() {
+		gb_.requestSerialInterrupt();
+	};
+	lua["gb"]["on_serial_exchange"] = [this](std::function<int(int)> f) {
+		gb_.setSerialExchangeCallback(f);
+	};
 }
 
 void GambatteSource::clearLua() {
 	gb_.clearTimerInterruptCallbacks();
+	gb_.clearSerialExchangeCallback();
 }

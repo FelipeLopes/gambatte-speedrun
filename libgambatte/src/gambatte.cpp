@@ -272,4 +272,16 @@ void GB::clearTimerInterruptCallbacks() {
 	p_->cpu.clearTimerInterruptCallbacks();
 }
 
+void GB::requestSerialInterrupt() {
+	p_->cpu.requestSerialInterrupt();
+}
+
+void GB::setSerialExchangeCallback(std::function<int(int)> callback) {
+	p_->cpu.setSerialExchangeCallback(callback);
+}
+
+void GB::clearSerialExchangeCallback() {
+	p_->cpu.clearSerialExchangeCallback();
+}
+
 }
