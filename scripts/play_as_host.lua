@@ -9,7 +9,6 @@ local doing_handshake = true
 local q = deque.new()
 
 function serial(a)
-  sz = gb.read_memory(0xcba3)
   if doing_handshake then
     doing_handshake = false
     M.write(to_ws, string.char(0x29))

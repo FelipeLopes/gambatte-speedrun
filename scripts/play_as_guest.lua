@@ -10,7 +10,6 @@ local handshake_done = false
 local q = deque.new()
 
 function serial(a)
-  sz = gb.read_memory(0xcba3)
   if not handshake_done then
     handshake_done = true
     return 0x29
