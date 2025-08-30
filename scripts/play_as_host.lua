@@ -9,6 +9,7 @@ local doing_handshake = true
 local q = deque.new()
 
 function serial(a)
+  sz = math.fmod(gb.read_memory(0xcba3) - gb.read_memory(0xcba4) + 32, 32)
   if doing_handshake then
     doing_handshake = false
     M.write(to_ws, string.char(0x29))
@@ -24,7 +25,7 @@ function serial(a)
     b = string.byte(data)
     q:push_right(b)
   end
-  if q:is_empty() then
+  if q:is_empty() or sz == 31 then
     return 0xac
   else
     c = q:pop_left()
