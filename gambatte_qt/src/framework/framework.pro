@@ -78,7 +78,7 @@ macx {
 }
 else:unix {
     DEFINES += PLATFORM_UNIX
-    INCLUDEPATH += /usr/include/lua5.4
+    INCLUDEPATH += /usr/include/lua5.2
     SOURCES += \
         framework/src/addblitterwidgets_unix.cpp \
         framework/src/getfullmodetoggler_unix.cpp \
@@ -97,7 +97,7 @@ else:unix {
         -lX11 \
         -lXext \
         -lXv \
-        -llua5.4 \
+        -llua5.2 \
         -lXrandr #\
 #        -lXxf86vm \
 #        -lXinerama
