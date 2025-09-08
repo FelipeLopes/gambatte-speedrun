@@ -10,6 +10,7 @@ socket = new ws.WebSocket(process.argv[2]);
 
 socket.on('error', error => {
     console.log(error)
+    process.exit(1)
 });
 
 socket.on('open', () => {
