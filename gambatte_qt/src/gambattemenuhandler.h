@@ -184,6 +184,7 @@ private slots:
 	void execInputDialog();
 	void execSoundDialog();
 	void execVideoDialog();
+	void execNetworkingDialog();
 	void execMiscDialog();
 	void prevStateSlot();
 	void nextStateSlot();

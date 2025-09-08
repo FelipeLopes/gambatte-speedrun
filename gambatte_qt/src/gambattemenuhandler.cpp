@@ -34,6 +34,7 @@
 #endif
 #include <iostream>
 #include <sol/sol.hpp>
+#include "subprocess.h"
 
 namespace {
 
@@ -407,6 +408,7 @@ GambatteMenuHandler::GambatteMenuHandler(MainWindow &mw,
 	settingsm->addAction(tr("&Miscellaneous..."), this, SLOT(execMiscDialog()));
 	settingsm->addAction(tr("&Sound..."), this, SLOT(execSoundDialog()));
 	settingsm->addAction(tr("&Video..."), this, SLOT(execVideoDialog()));
+	settingsm->addAction(tr("&Networking..."), this, SLOT(execNetworkingDialog()));
 	settingsm->addSeparator();
 	settingsm->addMenu(windowSizeMenu_.menu());
 	settingsm->addSeparator();
@@ -913,6 +915,24 @@ void GambatteMenuHandler::execSoundDialog() {
 void GambatteMenuHandler::execVideoDialog() {
 	TmpPauser tmpPauser(mw_, pauseInc_);
 	videoDialog_->exec();
+}
+
+void GambatteMenuHandler::execNetworkingDialog() {
+	TmpPauser tmpPauser(mw_, pauseInc_);
+	const char *command_line[] = {"cat", NULL};
+	struct subprocess_s subprocess;
+	int result = subprocess_create(command_line, subprocess_option_search_user_path, &subprocess);
+	if (result != 0) {
+		return;
+	}
+	FILE* toProcess = subprocess_stdin(&subprocess);
+	FILE* fromProcess = subprocess_stdout(&subprocess);
+	fwrite("Hello, World!", 1, 13, toProcess);
+	fclose(toProcess);
+	char buf[14];
+	fread(&buf, 1, 13, fromProcess);
+	buf[13] = '\0';
+	printf("%s\n",buf);
 }
 
 void GambatteMenuHandler::execMiscDialog() {

@@ -1,7 +1,7 @@
 const fs = require('fs');
 const ws = require('ws');
 
-socket = new ws.WebSocket('ws://localhost:8080/guest/abc');
+socket = new ws.WebSocket('ws://aevus.dev:8080/guest/abc');
 
 fs.open('/home/felipe/lua_to_ws_guest', 'r', (err, fd) => {
     const stream = fs.createReadStream(null, {fd});
