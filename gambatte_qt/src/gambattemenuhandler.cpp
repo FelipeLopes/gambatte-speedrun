@@ -34,6 +34,9 @@
 #endif
 #include <iostream>
 #include <sol/sol.hpp>
+#include <signal.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include "subprocess.h"
 
 namespace {
@@ -511,6 +514,13 @@ GambatteMenuHandler::GambatteMenuHandler(MainWindow &mw,
 	lua_.open_libraries(sol::lib::base, sol::lib::io, sol::lib::math, sol::lib::table,
 		sol::lib::bit32, sol::lib::package, sol::lib::string, sol::lib::os, sol::lib::coroutine);
 	source_.initLua(lua_);
+	lua_["emu"] = lua_.create_table_with();
+	lua_["emu"]["writeToNetwork"] = [this](uint8_t byte) {
+		writeToNetwork(byte);
+	};
+	lua_["emu"]["readFromNetwork"] = [this]() {
+		return readFromNetwork();
+	};
 }
 
 GambatteMenuHandler::~GambatteMenuHandler() {
@@ -917,22 +927,76 @@ void GambatteMenuHandler::execVideoDialog() {
 	videoDialog_->exec();
 }
 
+MainWindow* getMainWindow() {
+    foreach (QWidget* w, qApp->topLevelWidgets())
+        if (MainWindow* mainWin = qobject_cast<MainWindow*>(w))
+            return mainWin;
+    return nullptr;
+}
+
+void handle_sigchld(int sig, siginfo_t* siginfo, void* context) {
+	MainWindow* mw = getMainWindow();
+	mw->disableNetworking();
+	printf("Child exited: %d\n", siginfo->si_status);
+}
+
 void GambatteMenuHandler::execNetworkingDialog() {
 	TmpPauser tmpPauser(mw_, pauseInc_);
+
+	// Setup sigaction
+	struct sigaction sa;
+	sa.sa_handler = NULL;
+	sa.sa_sigaction = &handle_sigchld;
+	sigemptyset(&sa.sa_mask);
+	sa.sa_flags = SA_SIGINFO;
+	sa.sa_restorer = NULL;
+	sigaction(SIGCHLD, &sa, NULL);
+
+	// Start process
 	const char *command_line[] = {"cat", NULL};
 	struct subprocess_s subprocess;
-	int result = subprocess_create(command_line, subprocess_option_search_user_path, &subprocess);
+	mw_.enableNetworking();
+	int result = subprocess_create(command_line,
+		subprocess_option_search_user_path,
+		&subprocess);
 	if (result != 0) {
+		mw_.disableNetworking();
 		return;
 	}
 	FILE* toProcess = subprocess_stdin(&subprocess);
 	FILE* fromProcess = subprocess_stdout(&subprocess);
-	fwrite("Hello, World!", 1, 13, toProcess);
-	fclose(toProcess);
-	char buf[14];
-	fread(&buf, 1, 13, fromProcess);
-	buf[13] = '\0';
-	printf("%s\n",buf);
+	readFd_ = fileno(fromProcess);
+	writeFd_ = fileno(toProcess);
+	int flags = fcntl(readFd_, F_GETFL, 0);
+	fcntl(readFd_, F_SETFL, flags | O_NONBLOCK);
+}
+
+void GambatteMenuHandler::writeToNetwork(uint8_t byte) {
+	if (mw_.isNetworkingEnabled()) {
+		int sz = write(writeFd_, &byte, 1);
+		if (sz < 0) {
+			printf("Could not write to network!");
+		}
+	}
+}
+
+std::optional<uint8_t> GambatteMenuHandler::readFromNetwork() {
+	if (mw_.isNetworkingEnabled()) {
+		uint8_t val;
+		int sz = read(readFd_, &val, 1);
+		if (sz < 0) {
+			if (errno == EAGAIN || errno == EWOULDBLOCK) {
+				return std::nullopt;
+			} else {
+				printf("Error while reading from network!\n");
+				return std::nullopt;
+			}
+		} else {
+			return val;
+		}
+	} else {
+		return std::nullopt;
+	}
 }
 
 void GambatteMenuHandler::execMiscDialog() {

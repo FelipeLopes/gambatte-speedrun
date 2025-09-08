@@ -224,6 +224,11 @@ public:
 	void resetAudio();
 
 	void setDwmTripleBuffer(bool enable);
+
+	bool isNetworkingEnabled();
+	void enableNetworking();
+	void disableNetworking();
+
 	static bool hasDwmCapability();
 	static bool isDwmCompositionEnabled();
 
@@ -266,6 +271,7 @@ private:
 	MediaWidget *const w_;
 	QSize winSize_;
 	bool fullscreen_;
+	bool networking_;
 };
 
 class CallWhenMediaWorkerPaused : Uncopyable {

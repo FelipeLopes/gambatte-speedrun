@@ -39,6 +39,7 @@ MainWindow::FrameBuffer::Locked::~Locked() {
 MainWindow::MainWindow(MediaSource &source)
 : w_(new MediaWidget(source, *this))
 , fullscreen_(false)
+, networking_(false)
 {
 	setFocusPolicy(Qt::StrongFocus);
 	setCentralWidget(w_->widget());
@@ -76,6 +77,18 @@ void MainWindow::toggleFullScreen() {
 		if (isVisible())
 			doShowFullScreen();
 	}
+}
+
+bool MainWindow::isNetworkingEnabled() {
+	return networking_;
+}
+
+void MainWindow::enableNetworking() {
+	networking_ = true;
+}
+
+void MainWindow::disableNetworking() {
+	networking_ = false;
 }
 
 void MainWindow::setVideoFormat(QSize const &size) {

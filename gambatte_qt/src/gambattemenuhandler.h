@@ -154,12 +154,15 @@ private:
 	WindowSizeMenu windowSizeMenu_;
 	int pauseInc_;
 	sol::state lua_;
+	int readFd_, writeFd_;
 
 	void loadFile(QString const &fileName);
 	void setCurrentFile(QString const &fileName);
 	void setDmgPaletteColors();
 	void updateRecentFileActions();
 
+	void writeToNetwork(uint8_t byte);
+	std::optional<uint8_t> readFromNetwork();
 signals:
 	void romLoaded(bool);
 	void dmgRomLoaded(bool);
